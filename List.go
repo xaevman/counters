@@ -1,3 +1,15 @@
+//  ---------------------------------------------------------------------------
+//
+//  List.go
+//
+//  Copyright (c) 2015, Jared Chavez. 
+//  All rights reserved.
+//
+//  Use of this source code is governed by a BSD-style
+//  license that can be found in the LICENSE file.
+//
+//  -----------
+
 package counters
 
 import (
@@ -5,11 +17,14 @@ import (
     "sync"
 )
 
+// List is a centralized container for counter objects. It supplies methods
+// for adding, removing, and operating on a set of counters registered with it.
 type List struct {
     lock     sync.RWMutex
     counters map[string]Counter
 }
 
+// NewList returns a reference to a new List object.
 func NewList() *List {
     newObj := &List {
         counters : make(map[string]Counter),
@@ -18,6 +33,8 @@ func NewList() *List {
     return newObj
 }
 
+// Add registers a new counter with this counter list. If an existing counter
+// with the same name already exists, an error is returned.
 func (this *List) Add(c Counter) error {
     this.lock.Lock()
     defer this.lock.Unlock()
@@ -32,6 +49,15 @@ func (this *List) Add(c Counter) error {
     return nil
 }
 
+// Len returns the current number of counters contained within this counter list.
+func (this *List) Len() int {
+    this.lock.RLock()
+    this.lock.RUnlock()
+
+    return len(this.counters)
+}
+
+// Remove attempts to remove a counter by the given name from the counter list.
 func (this *List) Remove(counterName string) {
     this.lock.Lock()
     defer this.lock.Unlock()
@@ -39,6 +65,10 @@ func (this *List) Remove(counterName string) {
     delete(this.counters, counterName)
 }
 
+// Get attempts to retreive a counter by the given name from the counter list. If
+// it succeeds, a reference to the counter and an ok value of true are returned. 
+// If not, the counter reference will be nil, and an ok value of false is also 
+// returned.
 func (this *List) Get(counterName string) (Counter, bool) {
     this.lock.RLock()
     defer this.lock.RUnlock()
@@ -47,6 +77,8 @@ func (this *List) Get(counterName string) (Counter, bool) {
     return val, ok
 }
 
+// Do performs function f on each counter instance currently registered with the
+// counter list.
 func (this *List) Do(f func(Counter) error) []error {
     this.lock.RLock()
     defer this.lock.RUnlock()
