@@ -13,6 +13,7 @@
 package counters
 
 import (
+    "encoding/json"
     "fmt"
     "sync"
 )
@@ -49,34 +50,6 @@ func (this *List) Add(c Counter) error {
     return nil
 }
 
-// Len returns the current number of counters contained within this counter list.
-func (this *List) Len() int {
-    this.lock.RLock()
-    this.lock.RUnlock()
-
-    return len(this.counters)
-}
-
-// Remove attempts to remove a counter by the given name from the counter list.
-func (this *List) Remove(counterName string) {
-    this.lock.Lock()
-    defer this.lock.Unlock()
-
-    delete(this.counters, counterName)
-}
-
-// Get attempts to retreive a counter by the given name from the counter list. If
-// it succeeds, a reference to the counter and an ok value of true are returned. 
-// If not, the counter reference will be nil, and an ok value of false is also 
-// returned.
-func (this *List) Get(counterName string) (Counter, bool) {
-    this.lock.RLock()
-    defer this.lock.RUnlock()
-
-    val, ok := this.counters[counterName]
-    return val, ok
-}
-
 // Do performs function f on each counter instance currently registered with the
 // counter list.
 func (this *List) Do(f func(Counter) error) []error {
@@ -93,4 +66,44 @@ func (this *List) Do(f func(Counter) error) []error {
     }
 
     return errors
+}
+
+// Get attempts to retreive a counter by the given name from the counter list. If
+// it succeeds, a reference to the counter and an ok value of true are returned. 
+// If not, the counter reference will be nil, and an ok value of false is also 
+// returned.
+func (this *List) Get(counterName string) (Counter, bool) {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+
+    val, ok := this.counters[counterName]
+    return val, ok
+}
+
+// Len returns the current number of counters contained within this counter list.
+func (this *List) Len() int {
+    this.lock.RLock()
+    this.lock.RUnlock()
+
+    return len(this.counters)
+}
+
+func (this *List) MarshalJSON() ([]byte, error) {
+    this.lock.RLock()
+    this.lock.RUnlock()
+
+    cl := make([]Counter, 0, len(this.counters))
+    for k, _ := range this.counters {
+        cl = append(cl, this.counters[k])
+    }
+
+    return json.Marshal(&cl)
+}
+
+// Remove attempts to remove a counter by the given name from the counter list.
+func (this *List) Remove(counterName string) {
+    this.lock.Lock()
+    defer this.lock.Unlock()
+
+    delete(this.counters, counterName)
 }

@@ -13,6 +13,7 @@
 package counters
 
 import (
+    "bytes"
     "fmt"
     "sync"
     "time"
@@ -62,6 +63,23 @@ func (this *Timer) GetRaw() interface{} {
 // Name returns the name of this counter instance.
 func (this *Timer) Name() string {
     return this.name
+}
+
+func (this *Timer) MarshalJSON() ([]byte, error) {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+
+    var buffer bytes.Buffer
+
+    buffer.WriteString("{")
+    buffer.WriteString(fmt.Sprintf("\"key\" : \"%s\",", this.name))
+    buffer.WriteString(fmt.Sprintf(
+        "\"value\" : %f", 
+        time.Since(this.startTime).Seconds(),
+    ))
+    buffer.WriteString("}")
+
+    return buffer.Bytes(), nil
 }
 
 // Set starts this timer object.

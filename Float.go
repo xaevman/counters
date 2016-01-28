@@ -13,6 +13,7 @@
 package counters
 
 import (
+    "bytes"
     "fmt"
     "sync"
 )
@@ -61,6 +62,20 @@ func (this *Float) GetRaw() interface{} {
 // Name returns the name of this counter instance.
 func (this *Float) Name() string {
     return this.name
+}
+
+func (this *Float) MarshalJSON() ([]byte, error) {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+
+    var buffer bytes.Buffer
+
+    buffer.WriteString("{")
+    buffer.WriteString(fmt.Sprintf("\"key\" : \"%s\",", this.name))
+    buffer.WriteString(fmt.Sprintf("\"value\" : %f", this.val))
+    buffer.WriteString("}")
+
+    return buffer.Bytes(), nil
 }
 
 // Set type-asserts the supplied value as a float64 and sets the current

@@ -13,6 +13,7 @@
 package counters
 
 import (
+    "bytes"
     "fmt"
     "sync"
 )
@@ -56,6 +57,20 @@ func (this *Uint) GetRaw() interface{} {
     defer this.lock.RUnlock()
 
     return this.val
+}
+
+func (this *Uint) MarshalJSON() ([]byte, error) {
+    this.lock.RLock()
+    defer this.lock.RUnlock()
+
+    var buffer bytes.Buffer
+
+    buffer.WriteString("{")
+    buffer.WriteString(fmt.Sprintf("\"key\" : \"%s\",", this.name))
+    buffer.WriteString(fmt.Sprintf("\"value\" : %d", this.val))
+    buffer.WriteString("}")
+
+    return buffer.Bytes(), nil
 }
 
 // Name returns the name of this counter instance.
